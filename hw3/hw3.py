@@ -1,5 +1,5 @@
 import time
-from math import cos, sin, acos, pi
+from math import cos, sin, acos, pi, sqrt
 import numpy as np
 from Quadrotor import Quadrotor
 from mpl_toolkits.mplot3d import Axes3D
@@ -88,16 +88,19 @@ def quad_sim():
             des_z_vel = np.array([0])
             des_z_acc = np.array([0])
             
-            rel_R = np.matmul(des_R, q.R)
+
+            rel_R = np.matmul(des_R.T, q.R)
 
             axis = 0.5 * vee_map(rel_R - np.linalg.inv(rel_R))
 
             angle_of_axis = acos((trace(rel_R) - 1) / 2)
 
-            if normalize(axis) == 0:
-                rotation_error = np.array([0, 0, 0])
-            else:
-                rotation_error = angle_of_axis * (axis / normalize(axis))
+            ## The normalization will make the robot out of control
+            # if normalize(axis) == 0:
+            #     rotation_error = np.array([0, 0, 0])
+            # else:
+            #     rotation_error = angle_of_axis * (axis / normalize(axis))
+            rotation_error = angle_of_axis * axis
             
             desire_w = np.array([des_roll_rate,des_pitch_rate,des_yaw_rate]).reshape(3,1)
             ew = angular_vel - (q.R.T @ des_R) @ desire_w
@@ -257,7 +260,11 @@ def add_noise(x,value):
     return x + x_noise
 
 def normalize(v):
-    return np.linalg.norm(v)
+    tot = 0
+    for n in v:
+        tot += n ** 2
+    return sqrt(tot)
+    # return np.linalg.norm(v)
 
 def main():
 
